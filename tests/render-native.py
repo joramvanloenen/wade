@@ -32,7 +32,8 @@ for t in json.load(open(sys.argv[1] if len(sys.argv)>1 else output/'trace.json')
  elif name=='bufferData':
   typ=C.c_ushort if args[0]==34963 else f;a=(typ*len(args[1]))(*args[1]);M.fn(gl,'glBufferData',None,[u,C.c_size_t,ptr,u])(args[0],C.sizeof(a),a,args[2])
  elif name=='vertexAttribPointer':M.fn(gl,'glVertexAttribPointer',None,[u,i,u,C.c_ubyte,i,ptr])(*args[:-1],ptr(args[-1]))
- elif name=='texImage2D':M.fn(gl,'glTexImage2D',None,[u,i,i,i,i,i,u,u,ptr])(*args[:-1],None)
+ elif name=='texImage2D':
+  a=(C.c_ubyte*len(args[-1]))(*args[-1]) if isinstance(args[-1],list) else None;M.fn(gl,'glTexImage2D',None,[u,i,i,i,i,i,u,u,ptr])(*args[:-1],a)
  elif name=='uniformMatrix4fv':
   a=(f*len(args[2]))(*args[2]);M.fn(gl,'glUniformMatrix4fv',None,[i,i,C.c_ubyte,C.POINTER(f)])(args[0],1,args[1],a)
  elif name in ['uniform2fv','uniform3fv','uniform4fv']:
@@ -46,11 +47,11 @@ for t in json.load(open(sys.argv[1] if len(sys.argv)>1 else output/'trace.json')
  if err:raise RuntimeError(f'{name}: GL error {hex(err)}')
 M.fn(gl,'glFinish',None,[])()
 a=np.zeros((720,960,4),dtype=np.uint8);M.fn(gl,'glReadPixels',None,[i,i,i,i,u,u,ptr])(0,0,960,720,6408,5121,a.ctypes.data)
-Image.fromarray(a[::-1]).save(output/'wading.png' if len(sys.argv)>1 else output/'scene.png')
+Image.fromarray(a[::-1]).convert('RGB').save(output/'wading.jpg' if len(sys.argv)>1 else output/'scene.jpg',quality=93)
 print('Native GPU scene rendered without GL errors.')
 
 if len(sys.argv)>1:
- data=json.load(open(sys.argv[1]));lastfbo=next(t for t in reversed(data) if t['call']=='bindFramebuffer' and t['args'][1] is not None)['args'][1]['handle']
+ data=json.load(open(sys.argv[1]));simfbos=[t['ret']['handle'] for t in data if t['call']=='createFramebuffer'][:2];lastfbo=next(t for t in reversed(data) if t['call']=='bindFramebuffer' and t['args'][1] is not None and t['args'][1]['handle'] in simfbos)['args'][1]['handle']
  M.fn(gl,'glBindFramebuffer',None,[u,u])(36160,handles[lastfbo])
  a=np.zeros((224,224,4),dtype=np.float32);M.fn(gl,'glReadPixels',None,[i,i,i,i,u,u,ptr])(0,0,224,224,6408,5126,a.ctypes.data)
  height=a[:,:,0];print('GPU ripple height range:',float(height.min()),float(height.max()))
