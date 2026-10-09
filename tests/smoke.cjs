@@ -1,0 +1,22 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const path=require('path');const output=path.join(__dirname,'.output');fs.mkdirSync(output,{recursive:true});
+const trace=[],shaders=[];let record=true,id=1;
+const C={VERTEX_SHADER:35633,FRAGMENT_SHADER:35632,COMPILE_STATUS:35713,LINK_STATUS:35714,ARRAY_BUFFER:34962,ELEMENT_ARRAY_BUFFER:34963,STATIC_DRAW:35044,DYNAMIC_DRAW:35048,FLOAT:5126,UNSIGNED_SHORT:5123,UNSIGNED_BYTE:5121,HALF_FLOAT:5131,TRIANGLES:4,TEXTURE_2D:3553,RG16F:33327,RG:33319,RGBA8:32856,RGBA:6408,TEXTURE_MIN_FILTER:10241,TEXTURE_MAG_FILTER:10240,NEAREST:9728,LINEAR:9729,TEXTURE_WRAP_S:10242,TEXTURE_WRAP_T:10243,CLAMP_TO_EDGE:33071,FRAMEBUFFER:36160,COLOR_ATTACHMENT0:36064,FRAMEBUFFER_COMPLETE:36053,COLOR_BUFFER_BIT:16384,DEPTH_BUFFER_BIT:256,DEPTH_TEST:2929,BLEND:3042,TEXTURE0:33984,LEQUAL:515,SRC_ALPHA:770,ONE_MINUS_SRC_ALPHA:771};
+const convert=x=>ArrayBuffer.isView(x)?Array.from(x):x;
+const gl=new Proxy(C,{get(o,k){if(k in o)return o[k];return (...args)=>{let ret=null;if(k.startsWith('create')||k==='getUniformLocation')ret={handle:id++,kind:k};if(k==='getShaderParameter'||k==='getProgramParameter')return true;if(k==='getExtension')return {};if(k==='checkFramebufferStatus')return C.FRAMEBUFFER_COMPLETE;if(record)trace.push({call:k,args:args.map(convert),ret});if(k==='shaderSource')shaders.push({type:trace.find(t=>t.call==='createShader'&&t.ret.handle===args[0].handle).args[0],source:args[1]});return ret;};}});
+function elem(){return {listeners:{},style:{},value:'auto',checked:true,textContent:'',width:960,height:720,hidden:false,classList:{add(){},remove(){},toggle(){}},addEventListener(k,f){this.listeners[k]=f;},setAttribute(){},matches(){return false;},setPointerCapture(){},getContext(){return gl;}};}
+const elements=new Map();const document={hidden:false,getElementById:id=>{if(!elements.has(id))elements.set(id,elem());return elements.get(id);},addEventListener(){}};let raf,now=0;
+const context={document,window:{},console,Math,Float32Array,Uint16Array,Map,Set,performance:{now:()=>now},innerWidth:960,innerHeight:720,devicePixelRatio:1,matchMedia:()=>({matches:false}),addEventListener(){},requestAnimationFrame:f=>raf=f,setTimeout:f=>f(),location:{reload(){}}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),context);
+function tick(n=1){for(let i=0;i<n;i++){now+=1000/60;raf(now);}}
+tick();fs.writeFileSync(path.join(output,'trace.json'),JSON.stringify(trace));fs.writeFileSync(path.join(output,'shaders.json'),JSON.stringify(shaders));record=false;
+let w=context.window.Wade;assert(w&&w.state.frames===1);elements.get('begin').listeners.click();
+record=true;let c=elements.get('scene'),e={pointerId:1,clientX:480,clientY:550};c.listeners.pointerdown(e);c.listeners.pointermove({...e,clientY:360});tick(1);assert(w.state.speed>0&&w.state.speed<.1,'smooth acceleration');tick(59);fs.writeFileSync(path.join(output,'water-trace.json'),JSON.stringify(trace));record=false;tick(181);assert(w.state.speed>1.2,'slide up accelerates');assert(w.state.fish.some(f=>f.fear>.2),'nearby fish flee while walking');
+let old=w.state.speed;c.listeners.pointermove({...e,clientY:580});tick(90);assert(w.state.speed<old*.4,'slide down slows');
+c.listeners.pointermove({...e,clientY:400,clientX:600});tick(100);assert(w.state.heading>.5,'horizontal drag turns');
+c.listeners.pointerup(e);tick(900);assert(w.state.speed<.01,'release stops');assert(w.state.curiousCount>0,'fish investigate still player');
+for(let l of w.state.legs)assert(l.foot.every(Number.isFinite));
+// Check stance locking, then walk beyond the floating-origin threshold.
+c.listeners.pointerdown(e);c.listeners.pointermove({...e,clientY:300});let locked=0;for(let k=0;k<180;k++){let a=w.state;tick();let b=w.state;for(let j=0;j<2;j++)if(!a.legs[j].swing&&!b.legs[j].swing){assert(Math.hypot(a.legs[j].foot[0]-b.legs[j].foot[0],a.legs[j].foot[2]-b.legs[j].foot[2])<1e-9,'planted foot must not slide');locked++;}}assert(locked>30);
+tick(6600);assert(w.state.distance>160,'endless travel');assert(Math.hypot(...w.state.worldOffset)>0,'origin rebased');assert(w.state.player.every(Number.isFinite));assert(w.state.fish.every(f=>Number.isFinite(f.x)&&Number.isFinite(f.z)));
+console.log('PASS: acceleration, deceleration, steering, fish flight/curiosity, planted feet, endless travel and origin rebasing.');
+console.log(JSON.stringify({distance:w.state.distance,worldOffset:w.state.worldOffset,recordedDrawCalls:trace.filter(t=>t.call.startsWith('draw')).length,shaders:shaders.length}));

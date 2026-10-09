@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#244b47"><meta name="description" content="Take an endless walk through clear shallows. Move gently. Let the fish come to you.">
+<title>Wade — the endless shallows</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="scene" aria-label="Interactive shallow water landscape. Hold and slide up to walk, sideways to turn, release to stand still."></canvas>
+<div id="vignette"></div>
+<header><div class="wordmark">wade<span>THE ENDLESS SHALLOWS</span></div><nav><button id="sound" aria-label="Enable water sound" title="Water sound"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="soundwave" d="m17 9 4 6m0-6-4 6"/></svg></button><button id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button></nav></header>
+<main id="intro">
+<div class="eyebrow"><span></span> A MOMENT, OUTSIDE</div>
+<h1>wade</h1>
+<p>Nowhere to get to.<br>Just water, and you.</p>
+<button id="begin">Step into the shallows <span>↗</span></button>
+<div class="introNote">Hold & slide to walk. Be still to make friends.</div>
+</main>
+<div id="hud" class="hidden"><div id="presence"><span class="statusDot"></span><span id="fishState">The shallows are settling</span></div><div id="travel"><span id="distance">0</span><small>m wandered</small></div><div id="hint"><b>Hold & slide up to wade</b><span>Slide sideways to turn · release to be still</span></div><div id="speed"><span id="speedLabel">STILL</span><div><i id="speedFill"></i></div></div></div>
+<div id="touchGuide"><div id="touchLine"></div><div id="touchOrigin"></div><div id="touchThumb"></div><span id="touchText">WADE</span></div>
+<aside id="settings" class="hidden"><div class="panelHead"><h2>Your shallows</h2><button id="closeSettings" aria-label="Close settings">×</button></div><label>Water depth <span id="depthVal">Shin deep</span><input id="depth" type="range" min="0.12" max="0.52" value="0.32" step="0.01"></label><label>Water detail<select id="quality"><option value="auto">Adaptive · mobile friendly</option><option value="low">Gentle · lower power</option><option value="high">Fine · more ripples</option></select></label><label class="switchRow">Show touch guide<input type="checkbox" id="guideToggle" checked></label><div class="keyboard">On a keyboard<br><strong>W / ↑</strong> walk · <strong>S / ↓</strong> slow<br><strong>A D / ← →</strong> turn · <strong>Space</strong> be still</div><p class="panelNote">No finish line. No score. The fish have their own plans.</p></aside>
+<div id="error" class="hidden"><h2>A little more graphics power, please.</h2><p>Wade needs WebGL 2. Try opening this page in a recent Chrome or Safari browser.</p><button onclick="location.reload()">Try again</button></div>
+<script src="app.js"></script>
+</body></html>
